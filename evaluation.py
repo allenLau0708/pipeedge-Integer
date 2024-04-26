@@ -32,7 +32,8 @@ class ReportAccuracy():
 
     def report(self,):
         print(f"The accuracy so far is: {100*self.total_acc:.2f}")
-        file_name = os.path.join(self.output_dir, self.model_name, "result_"+self.partition+"_"+str(self.quant)+".txt")
+        file_name = os.path.join(self.output_dir, self.model_name, f"b{self.quant}_integer_noClamp_{self.partition[1]}.txt")
+        # file_name = os.path.join(self.output_dir, self.model_name, f"b{self.quant}_integer_withClamp_{self.partition[1]}.txt")
         os.makedirs(os.path.dirname(file_name), exist_ok=True)
         with open(file_name, 'a') as f:
             f.write(f"{100*self.total_acc:.2f}\n")
@@ -93,9 +94,8 @@ def evaluation(args):
         feature_extractor = ViTFeatureExtractor.from_pretrained(model_name)
     val_transform = ViTFeatureExtractorTransforms(feature_extractor)
     
-    # val_dataset = ImageFolder(os.path.join(dataset_path, dataset_split),
-    #                         transform = val_transform)
-    val_dataset = ImageFolder(dataset_path,transform = val_transform)
+    val_dataset = ImageFolder(os.path.join(dataset_path, dataset_split),
+                            transform = val_transform)
     val_loader = DataLoader(
         val_dataset,
         batch_size = batch_size,
@@ -103,6 +103,7 @@ def evaluation(args):
         shuffle=True,
         pin_memory=True
     )
+    
     # model config
     def _get_default_quant(n_stages: int) -> List[int]:
         return [0] * n_stages
@@ -123,7 +124,7 @@ def evaluation(args):
 
     # run inference
     start_time = time.time()
-    acc_reporter = ReportAccuracy(batch_size, output_dir, model_name, partition, stage_quant[0])
+    acc_reporter = ReportAccuracy(batch_size, output_dir, model_name, parts, stage_quant[0])
     with torch.no_grad():
         for batch_idx, (input, target) in enumerate(val_loader):
             if batch_idx == num_stop_batch and num_stop_batch:
@@ -170,12 +171,19 @@ if __name__ == "__main__":
     dset = parser.add_argument_group('Dataset arguments')
     dset.add_argument("--dataset-name", type=str, default='ImageNet', choices=['CoLA', 'ImageNet'],
                       help="dataset to use")
-    dset.add_argument("--dataset-root", type=str, default= "/home1/zeliliu/pipeedge/pipeedge-FloatPoint/ILSVRC2012_img_val/",
+    dset.add_argument("--dataset-root", type=str, default= "",
                       help="dataset root directory (e.g., for 'ImageNet', must contain "
                            "'ILSVRC2012_devkit_t12.tar.gz' and at least one of: "
                            "'ILSVRC2012_img_train.tar', 'ILSVRC2012_img_val.tar'")
-    dset.add_argument("--dataset-split", default='val', type=str,
+    dset.add_argument("--dataset-split", default='ILSVRC2012_img_val/', type=str,
                       help="dataset split (depends on dataset), e.g.: train, val, validation, test")
+    # In discovery, use the below commented code, you dont need to dowanload the dataset to the discovery.
+    # dset.add_argument("--dataset-root", type=str, default= "/project/jpwalter_148/hnwang/datasets/ImageNet/",
+    #                   help="dataset root directory (e.g., for 'ImageNet', must contain "
+    #                        "'ILSVRC2012_devkit_t12.tar.gz' and at least one of: "
+    #                        "'ILSVRC2012_img_train.tar', 'ILSVRC2012_img_val.tar'")
+    # dset.add_argument("--dataset-split", default='val', type=str,
+    #                   help="dataset split (depends on dataset), e.g.: train, val, validation, test")
     dset.add_argument("--dataset-indices-file", default=None, type=str,
                       help="PyTorch or NumPy file with precomputed dataset index sequence")
     dset.add_argument("--dataset-shuffle", type=bool, nargs='?', const=True, default=False,
