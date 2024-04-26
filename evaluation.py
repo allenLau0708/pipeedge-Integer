@@ -81,7 +81,7 @@ def evaluation(args):
     model_name = args.model_name
     model_file = args.model_file
     num_stop_batch = args.stop_at_batch
-    is_clamp = True
+    assert os.path.exists(os.path.join(output_dir,model_name))==False
     # if model_file is None:
     #     model_file = model_cfg.get_model_default_weights_file(model_name)
 
