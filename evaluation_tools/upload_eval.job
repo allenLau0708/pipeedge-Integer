@@ -9,4 +9,4 @@
 
 # conda activate primary
 cd /home1/zeliliu/pipeedge/pipeedge-Integer
-python evaluation.py -n 32 -pt $1 -q $2,$2
+python evaluation.py -n 32 -pt $1 -q $2,$2 -m google/vit-large-patch16-224
