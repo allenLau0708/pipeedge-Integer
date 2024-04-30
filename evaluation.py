@@ -5,7 +5,8 @@ import time
 import torch
 from typing import List
 from torch.utils.data import DataLoader
-from torchvision.datasets import ImageFolder
+from torchvision.datasets import ImageFolder,ImageNet
+from torchvision import transforms
 from transformers import DeiTFeatureExtractor, ViTFeatureExtractor
 from runtime import forward_hook_quant_encode, forward_pre_hook_quant_decode
 from utils.data import ViTFeatureExtractorTransforms
@@ -89,12 +90,22 @@ def evaluation(args):
                         'facebook/deit-small-distilled-patch16-224',
                         'facebook/deit-tiny-distilled-patch16-224']:
         feature_extractor = DeiTFeatureExtractor.from_pretrained(model_name)
+    elif model_name.startswith('torchvision'):
+        feature_extractor = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225]),
+        # transforms.Lambda(lambda x: x.unsqueeze(0))
+        ])
+        val_dataset = ImageFolder(os.path.join(dataset_path, dataset_split),
+                                transform = feature_extractor)
     else:
         feature_extractor = ViTFeatureExtractor.from_pretrained(model_name)
-    val_transform = ViTFeatureExtractorTransforms(feature_extractor)
-    
-    val_dataset = ImageFolder(os.path.join(dataset_path, dataset_split),
+        val_transform = ViTFeatureExtractorTransforms(feature_extractor)
+        val_dataset = ImageFolder(os.path.join(dataset_path, dataset_split),
                             transform = val_transform)
+        
     val_loader = DataLoader(
         val_dataset,
         batch_size = batch_size,
@@ -172,20 +183,20 @@ if __name__ == "__main__":
                       help="dataset to use")
     
     # In local, use the below commented code, and check if you have already downloaded the dataset
-    # dset.add_argument("--dataset-root", type=str, default= "",
-    #                   help="dataset root directory (e.g., for 'ImageNet', must contain "
-    #                        "'ILSVRC2012_devkit_t12.tar.gz' and at least one of: "
-    #                        "'ILSVRC2012_img_train.tar', 'ILSVRC2012_img_val.tar'")
-    # dset.add_argument("--dataset-split", default='ILSVRC2012_img_val/', type=str,
-    #                   help="dataset split (depends on dataset), e.g.: train, val, validation, test")
-    
-    # In discovery, use the below commented code, you dont need to dowanload the dataset to the discovery.
-    dset.add_argument("--dataset-root", type=str, default= "/project/jpwalter_148/hnwang/datasets/ImageNet/",
+    dset.add_argument("--dataset-root", type=str, default= "",
                       help="dataset root directory (e.g., for 'ImageNet', must contain "
                            "'ILSVRC2012_devkit_t12.tar.gz' and at least one of: "
                            "'ILSVRC2012_img_train.tar', 'ILSVRC2012_img_val.tar'")
-    dset.add_argument("--dataset-split", default='val', type=str,
+    dset.add_argument("--dataset-split", default='ILSVRC2012_img_val/', type=str,
                       help="dataset split (depends on dataset), e.g.: train, val, validation, test")
+    
+    # In discovery, use the below commented code, you dont need to dowanload the dataset to the discovery.
+    # dset.add_argument("--dataset-root", type=str, default= "/project/jpwalter_148/hnwang/datasets/ImageNet/",
+    #                   help="dataset root directory (e.g., for 'ImageNet', must contain "
+    #                        "'ILSVRC2012_devkit_t12.tar.gz' and at least one of: "
+    #                        "'ILSVRC2012_img_train.tar', 'ILSVRC2012_img_val.tar'")
+    # dset.add_argument("--dataset-split", default='val', type=str,
+    #                   help="dataset split (depends on dataset), e.g.: train, val, validation, test")
     
     dset.add_argument("--dataset-indices-file", default=None, type=str,
                       help="PyTorch or NumPy file with precomputed dataset index sequence")
