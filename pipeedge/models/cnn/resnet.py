@@ -325,7 +325,6 @@ class ResNetModelShard(ModuleShard):
 
     @torch.no_grad()
     def _load_weights_first(self, weights):
-        print(type(weights))
         self.conv1.load_state_dict(weights.conv1.state_dict())
         self.bn1.load_state_dict(weights.bn1.state_dict())
         self.relu.load_state_dict(weights.relu.state_dict())
