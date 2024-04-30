@@ -4,9 +4,11 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=64GB
-#SBATCH --time=2:00:00
+#SBATCH --time=10:00:00
 #SBATCH --account=jpwalter_148
 
 # conda activate primary
 cd /home1/zeliliu/pipeedge/pipeedge-Integer
-python evaluation.py -n 32 -pt $1 -q $2,$2 -m google/vit-large-patch16-224
+# python evaluation.py -n 32 -pt $1 -q $2,$2 -m google/vit-base-patch16-224
+# python evaluation.py -n 32 -pt $1 -q $2,$2 -m google/vit-large-patch16-224
+python evaluation.py -n 32 -pt $1 -q $2,$2 -m torchvision/resnet18
